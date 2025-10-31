@@ -55,7 +55,7 @@ model Product {
   name          String
   current_price Decimal  @db.Decimal(10, 4)
   current_stock Decimal  @db.Decimal(6, 2)
-  created_at    DateTime
+  created_at    DateTime @default(now())
 
   Product_Order_items  Product_Order_items[]
   Product_Price_Record Product_Price_Record[]
