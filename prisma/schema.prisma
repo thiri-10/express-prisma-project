@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
- 
 }
 
 datasource db {
@@ -14,11 +13,108 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model customer {
-  id        Int      @id @default(autoincrement())
-  name      String 
-  phno      String 
-  address   String
-  email     String    @unique
-  createdAt DateTime  @default(now())
+//----------------------------------------------------------------------
+// enums used in the models 
+//----------------------------------------------------------------------
+
+enum Status {
+  ACTIVE
+  SUSPENDED
+}
+
+enum Updated_by {
+  ADMIN
+  ORDER
+}
+
+enum Type {
+  SALE
+  PAYMENT
+}
+
+//----------------------------------------------------------------------
+//Tables realated to Product 
+//----------------------------------------------------------------------
+
+model Customer {
+  id           String   @id @default(uuid())
+  name         String
+  ph_no        String
+  address      String
+  email        String   @unique
+  credit_limit Decimal  @db.Decimal(20, 4)
+  status       Status
+  createdAt    DateTime @default(now())
+
+  Product_Order             Product_Order[]
+  Product_Transition_Record Product_Transaction_Record[]
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  name          String
+  current_price Decimal  @db.Decimal(10, 4)
+  current_stock Decimal  @db.Decimal(6, 2)
+  created_at    DateTime
+
+  Product_Order_items  Product_Order_items[]
+  Product_Price_Record Product_Price_Record[]
+  Product_Stock_Record Product_Stock_Record[]
+}
+
+model Product_Order {
+  id          String   @id @default(uuid())
+  customer_id String
+  order_date  DateTime @default(now())
+  grand_total Decimal  @db.Decimal(20, 4)
+
+  customer Customer @relation(fields: [customer_id], references: [id])
+
+  Product_Order_items       Product_Order_items[]
+  Product_Transition_Record Product_Transaction_Record[]
+}
+
+model Product_Order_items {
+  id               String  @id @default(uuid())
+  product_order_id String
+  product_id       String
+  quantity         Decimal @db.Decimal(6, 2) // get from stock record table by enddate is NULL & product id 
+  unit_price       Decimal @db.Decimal(10, 4) // get from the price record table by enddate is NULL & product id 
+  total_amount     Decimal @db.Decimal(20, 4)
+
+  product_order Product_Order @relation(fields: [product_order_id], references: [id])
+  product       Product       @relation(fields: [product_id], references: [id])
+}
+
+model Product_Price_Record {
+  id         String    @id @default(uuid())
+  product_id String
+  price      Decimal   @db.Decimal(10, 4)
+  start_date DateTime  @default(now())
+  end_date   DateTime? // if not changed yet, Null will be default 
+
+  product Product @relation(fields: [product_id], references: [id])
+}
+
+model Product_Stock_Record {
+  id         String     @id @default(uuid())
+  product_id String
+  stock      Decimal    @db.Decimal(6, 2)
+  start_date DateTime   @default(now())
+  end_date   DateTime? // if not changed yet, Null will be default 
+  updated_by Updated_by
+
+  product Product @relation(fields: [product_id], references: [id])
+}
+
+model Product_Transaction_Record {
+  id               String   @id @default(uuid())
+  product_order_id String?
+  customer_id      String
+  amount           Decimal  @db.Decimal(20, 4)
+  type             Type
+  updated_at       DateTime @default(now())
+
+  product_order Product_Order? @relation(fields: [product_order_id], references: [id])
+  customer      Customer       @relation(fields: [customer_id], references: [id])
 }
