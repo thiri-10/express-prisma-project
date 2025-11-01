@@ -13,12 +13,15 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
+  
 model customer {
   id        Int      @id @default(autoincrement())
   name      String 
   phno      String 
   address   String
   email     String    @unique
+  receivableAmount Float @default(0)
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
+
